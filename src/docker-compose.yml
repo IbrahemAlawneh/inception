@@ -1,0 +1,87 @@
+services:
+  nginx:
+    build: images_folder/nginx
+    image: nginx
+    container_name: nginx
+    ports:
+      - "443:443"
+    volumes:
+      - wordpress_data:/var/website/html
+    networks:
+      - front_net
+    env_file:
+      - .env
+    depends_on:
+      - wordpress
+    restart: always
+
+  wordpress:
+    image: wordpress
+    build: images_folder/wordpress
+    container_name: wordpress
+    secrets:
+      - db_user_password
+      - wp_admin_password
+      - wp_user_password
+    env_file:
+      - .env
+    networks:
+      - front_net
+      - back_net
+    volumes:
+      - wordpress_data:/var/website/html
+    depends_on:
+      - mariadb
+    restart: always
+
+  mariadb:
+    image: mariadb
+    build: images_folder/mariadb
+    container_name: mariadb
+    secrets:
+      - db_user_password
+      - db_root_password
+    env_file:
+      - .env
+    networks:
+      - back_net
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    restart: always
+    
+
+
+volumes:
+  wordpress_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/ialalawn/data/wordpress
+
+  mariadb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/ialalawn/data/mariadb
+
+networks:
+  front_net:
+    driver: bridge
+
+  back_net:
+    driver: bridge
+
+secrets:
+  wp_admin_password:
+    file: secrets/wp_admin_password
+  
+  wp_user_password:
+    file: secrets/wp_user_password
+  
+  db_user_password:
+    file: secrets/db_user_password
+  
+  db_root_password:
+    file: secrets/db_root_password
